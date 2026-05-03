@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr. — Ward Rounds</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1a2744;--teal:#1d9e75;--teal-l:#e1f5ee;--teal-m:#5dcaa5;
+  --amber:#ba7517;--amber-l:#faeeda;
+  --red:#c0392b;--red-l:#fcebeb;
+  --blue:#185fa5;--blue-l:#e6f1fb;
+  --gray:#f5f4f0;--gray-m:#d3d1c7;
+  --text:#1a2744;--muted:#5f5e5a;
+  --border:rgba(26,39,68,0.12);
+}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gray);color:var(--text);overflow:hidden}
+
+.screen{display:none;height:100dvh;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* ── WELCOME ── */
+#sw{background:var(--navy);align-items:center;justify-content:flex-start;padding:env(safe-area-inset-top,2rem) 1.75rem 2rem;text-align:center;overflow-y:auto;padding-top:max(env(safe-area-inset-top),2.5rem)}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(29,158,117,.2);border:1px solid rgba(29,158,117,.3);color:var(--teal-m);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:1.5rem;margin-top:.5rem}
+.wtitle{font-family:'Source Serif 4',serif;font-size:32px;font-weight:300;color:#fff;line-height:1.2;margin-bottom:.75rem}
+.wtitle em{font-style:italic;color:var(--teal-m)}
+.wsub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:2rem;max-width:320px}
+.btn-p{background:var(--teal);color:#fff;border:none;padding:18px 36px;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:17px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px;width:100%;max-width:320px;justify-content:center;min-height:56px}
+.btn-p:active{opacity:.85}
+#mic-warning{margin-top:1.25rem;background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.3);color:#fac775;font-size:13px;padding:12px 18px;border-radius:10px;max-width:320px;display:none;line-height:1.5}
+
+/* ── CASES ── */
+#sc{background:var(--gray)}
+.ward-hdr{background:var(--navy);padding:max(env(safe-area-inset-top),1rem) 1.25rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ward-t{font-family:'Source Serif 4',serif;font-size:17px;font-weight:300;color:#fff;display:flex;align-items:center;gap:8px}
+.ward-t span{font-size:10px;background:rgba(29,158,117,.25);color:var(--teal-m);padding:3px 10px;border-radius:12px;font-family:'DM Sans',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.btn-g{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);padding:9px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;min-height:40px}
+.cases-wrap{padding:1.25rem;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sec-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.75rem;font-weight:500}
+.cgrid{display:flex;flex-direction:column;gap:10px}
+.ccard{background:#fff;border:1px solid var(--border);border-radius:16px;padding:1.25rem 1.25rem 1rem;cursor:pointer;position:relative;overflow:hidden;min-height:80px;display:flex;flex-direction:column;justify-content:center}
+.ccard:active{opacity:.85;transform:scale(.98)}
+.ccard::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:16px 16px 0 0}
+.ccard.moderate::before{background:var(--teal)}
+.ccard.complex::before{background:var(--amber)}
+.ccard.critical::before{background:var(--red)}
+.chdr{display:flex;align-items:center;justify-content:space-between}
+.pname{font-size:17px;font-weight:500;color:var(--text);margin-bottom:2px}
+.pmeta{font-size:13px;color:var(--muted)}
+.cbadge{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:5px 12px;border-radius:12px;flex-shrink:0}
+.cbadge.moderate{background:var(--teal-l);color:#0f6e56}
+.cbadge.complex{background:var(--amber-l);color:#633806}
+.cbadge.critical{background:var(--red-l);color:var(--red)}
+
+/* ── CONSULTATION ── */
+#sco{flex-direction:column;background:#f8f7f4}
+.sidebar{display:none}
+.cmain{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ctopbar{background:var(--navy);padding:max(env(safe-area-inset-top),0.75rem) 1.25rem 0.75rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ctop-case{font-size:13px;color:rgba(255,255,255,.6)}
+.ctop-case strong{color:#fff;font-weight:500;display:block;font-size:15px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.speaking-pill{display:none;align-items:center;gap:5px;background:rgba(29,158,117,.25);color:var(--teal-m);font-size:11px;font-weight:500;padding:5px 10px;border-radius:14px}
+.speak-dot{width:6px;height:6px;border-radius:50%;background:var(--teal-m);animation:pulse-dot 1.2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+.btn-end{font-size:13px;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);cursor:pointer;color:rgba(255,255,255,.8);font-family:'DM Sans',sans-serif;min-height:38px}
+.btn-end:active{opacity:.7}
+
+/* vitals strip */
+.vitals-strip{background:var(--navy);padding:0 1.25rem .75rem;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none}
+.vitals-strip::-webkit-scrollbar{display:none}
+.vs-item{background:rgba(255,255,255,.08);border-radius:10px;padding:7px 12px;flex-shrink:0;text-align:center;min-width:56px}
+.vs-name{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.vs-val{font-size:12px;font-weight:600;color:#fff}
+.vs-val.abnormal{color:#f09595}
+.vs-val.warning{color:#fac775}
+
+.transcript{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem;display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;gap:8px;max-width:90%}
+.msg.patient{align-self:flex-start}
+.msg.doctor{align-self:flex-end;flex-direction:row-reverse}
+.msg.system{align-self:center;max-width:100%}
+.mav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:2px}
+.msg.patient .mav{background:var(--blue-l);color:var(--blue)}
+.msg.doctor .mav{background:var(--teal-l);color:#0f6e56}
+.mbub{border-radius:18px;padding:11px 15px;font-size:15px;line-height:1.55}
+.msg.patient .mbub{background:#fff;border:1px solid var(--border);border-top-left-radius:4px;color:var(--text)}
+.msg.doctor .mbub{background:var(--navy);border-top-right-radius:4px;color:rgba(255,255,255,.92)}
+.msg.system .mbub{background:var(--teal-l);border:1px solid rgba(29,158,117,.2);color:#0f6e56;font-size:13px;text-align:center;border-radius:12px;width:100%}
+.msender{font-size:11px;font-weight:500;margin-bottom:3px;color:var(--muted)}
+.msg.doctor .msender{text-align:right;color:rgba(255,255,255,.4)}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--gray-m);display:inline-block;animation:td 1.2s infinite;margin-right:3px}
+.tdot:nth-child(2){animation-delay:.2s}
+.tdot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
+
+/* ── VOICE BAR ── */
+.vbar{background:#fff;border-top:1px solid var(--border);padding:1rem 1.25rem max(env(safe-area-inset-bottom),1rem);flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.vbar-livetext{font-size:14px;color:var(--text);text-align:center;min-height:20px;max-width:100%;line-height:1.6;font-style:italic;word-break:break-word;padding:0 .5rem}
+.vbar-row{display:flex;align-items:center;justify-content:center;gap:20px;width:100%}
+.vbar-status{font-size:13px;color:var(--muted);text-align:center}
+.vbar-status.listening{color:var(--red);font-weight:500}
+.vbar-status.speaking{color:var(--teal);font-weight:500}
+
+/* ── SUMMARY ── */
+#ss{background:var(--gray);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1.5rem 1.25rem max(env(safe-area-inset-bottom),1.5rem);align-items:center}
+.sum-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:1.5rem;width:100%;max-width:480px}
+.sum-icon{width:52px;height:52px;border-radius:50%;background:var(--teal-l);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem;color:var(--teal)}
+.sum-title{font-family:'Source Serif 4',serif;font-size:22px;font-weight:400;margin-bottom:.4rem;line-height:1.2}
+.sum-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:1.25rem}
+.sum-fb{background:var(--gray);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;font-size:14px;line-height:1.75}
+.sum-fbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;margin-bottom:8px}
+.sum-acts{display:flex;flex-direction:column;gap:10px}
+.sum-acts .btn-p{width:100%;max-width:100%;justify-content:center}
+.sum-acts .btn-end-w{width:100%;padding:15px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:15px;min-height:50px}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--muted);display:inline-block;animation:td 1.2s infinite;opacity:.5;margin-right:2px}
+.sdot:nth-child(2){animation-delay:.2s}
+.sdot:nth-child(3){animation-delay:.4s}
+</style>
+</head>
+<body>
+
+<div id="sw" class="screen active">
+  <div class="badge">&#9829; Voice Therapy</div>
+  <h1 class="wtitle">Welcome back, <em>Doctor.</em></h1>
+  <p class="wsub">Choose a patient, then press the microphone and speak your questions. The patient will respond aloud.</p>
+
+  <div style="margin-bottom:1.5rem;width:100%;max-width:380px">
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em">Anthropic API Key</div>
+    <div style="display:flex;gap:8px">
+      <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
+        style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+        onkeydown="if(event.key==='Enter')saveKey()"/>
+      <button onclick="saveKey()" style="background:rgba(29,158,117,0.4);border:1px solid rgba(29,158,117,0.5);color:#fff;padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap">Save Key</button>
+    </div>
+    <div id="key-status" style="font-size:11px;margin-top:6px;min-height:16px"></div>
+  </div>
+
+  <button class="btn-p" onclick="showCases()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.31 6-6.72h-1.7z"/></svg>
+    Enter the Ward
+  </button>
+  <div class="chips" style="margin-top:2rem">
+    <div class="chip"><div class="chip-t">Complex</div><div class="chip-n">Chest pain</div></div>
+    <div class="chip"><div class="chip-t">Critical</div><div class="chip-n">Sepsis</div></div>
+    <div class="chip"><div class="chip-t">Moderate</div><div class="chip-n">Dyspnea</div></div>
+  </div>
+  <div id="mic-warning">&#9888; Please open this file in Chrome for full voice support.</div>
+</div>
+
+<div id="sc" class="screen">
+  <div class="ward-hdr">
+    <div class="ward-t">Internal Medicine <span>General Ward</span></div>
+    <button class="btn-g" onclick="showWelcome()">&#8592; Home</button>
+  </div>
+  <div class="cases-wrap">
+    <div class="sec-lbl">Select a patient</div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+</div>
+
+<div id="sco" class="screen">
+  <div class="cmain">
+    <div class="ctopbar">
+      <div class="ctop-case"><span style="font-size:12px;opacity:.6">Consulting</span><strong id="topname">—</strong></div>
+      <div class="topbar-right">
+        <div class="speaking-pill" id="speaking-pill"><div class="speak-dot"></div>Speaking</div>
+        <button class="btn-end" onclick="endCase()">Wrap up</button>
+      </div>
+    </div>
+    <div class="vitals-strip" id="vsec"></div>
+    <div class="transcript" id="transcript"></div>
+    <div class="vbar">
+      <div id="live-text" class="vbar-livetext"></div>
+      <div class="vbar-row">
+        <button id="micbtn" onclick="toggleMic()" style="width:88px;height:88px;border-radius:50%;border:none;background:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;flex-shrink:0;touch-action:manipulation">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.31 6-6.72h-1.7z"/></svg>
+        </button>
+        <button id="sendbtn" onclick="sendAccumulated()" style="display:none;padding:18px 36px;border-radius:16px;border:none;background:var(--teal);color:#fff;font-family:DM Sans,sans-serif;font-size:18px;font-weight:500;cursor:pointer;-webkit-appearance:none;touch-action:manipulation;min-height:60px">
+          Send &#8594;
+        </button>
+      </div>
+      <div id="vstatus" class="vbar-status">Press the microphone to speak</div>
+      <button id="replay-btn" onclick="replayLast()" style="display:none;font-size:14px;color:var(--muted);background:var(--gray);border:1px solid var(--border);padding:10px 20px;border-radius:16px;cursor:pointer;font-family:DM Sans,sans-serif;min-height:44px">&#9654; Replay</button>
+    </div>
+  </div>
+</div>
+
+<div id="ss" class="screen">
+  <div class="sum-card" style="max-width:580px">
+
+    <!-- PHASE 1: Doctor summarizes -->
+    <div id="sum-phase1">
+      <div class="sum-icon" style="background:var(--blue-l);color:var(--blue)">&#128203;</div>
+      <h2 class="sum-title">Your assessment, Doctor</h2>
+      <p class="sum-sub">Before we review — tell us your diagnosis and plan for <strong id="sum-patient-name"></strong>. Take your time.</p>
+
+      <div style="background:var(--gray);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;margin-bottom:8px">Your spoken summary</div>
+        <div id="sum-spoken-text" style="font-size:14px;color:var(--text);line-height:1.7;min-height:48px;font-style:italic"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+        <button id="sum-micbtn" onclick="toggleSumMic()" style="width:60px;height:60px;border-radius:50%;border:none;background:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;flex-shrink:0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.31 6-6.72h-1.7z"/></svg>
+        </button>
+        <div>
+          <div id="sum-status" style="font-size:12px;color:var(--muted)">Press the microphone and speak your summary</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Include: diagnosis &bull; key findings &bull; next steps</div>
+        </div>
+      </div>
+
+      <button id="sum-sendbtn" onclick="submitSummary()" style="display:none;width:100%;padding:13px;border-radius:9px;border:none;background:var(--teal);color:#fff;font-family:DM Sans,sans-serif;font-size:15px;font-weight:500;cursor:pointer">
+        Submit my assessment &#8594;
+      </button>
+      <button onclick="submitSummary()" style="margin-top:8px;width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);background:#fff;color:var(--muted);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer">
+        Skip — show me the diagnosis
+      </button>
+    </div>
+
+    <!-- PHASE 2: Full diagnosis reveal -->
+    <div id="sum-phase2" style="display:none">
+      <div class="sum-icon">&#10003;</div>
+      <h2 class="sum-title" id="sum-title">Case complete</h2>
+      <p class="sum-sub" id="sum-sub"></p>
+
+      <!-- Doctor's summary -->
+      <div id="sum-doctor-block" style="display:none;margin-bottom:1rem">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;margin-bottom:6px">Your assessment</div>
+        <div id="sum-doctor-said" style="background:var(--blue-l);border-radius:9px;padding:.85rem 1rem;font-size:13px;line-height:1.6;color:var(--text)"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="sum-fb">
+        <div class="sum-fbl">Diagnosis &amp; feedback</div>
+        <div id="sum-fb-text"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div>
+      </div>
+
+      <div class="sum-acts">
+        <button class="btn-p" onclick="showCases()">Next patient</button>
+        <button class="btn-end-w" onclick="showWelcome()">Exit ward</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let API_KEY = localStorage.getItem('aphasia_api_key') || '';
+
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { setKeyStatus('Please paste your API key first.', '#f09595'); return; }
+  API_KEY = val;
+  localStorage.setItem('aphasia_api_key', val);
+  setKeyStatus('Key saved — you are ready!', '#5dcaa5');
+}
+function setKeyStatus(msg, color) {
+  const el = document.getElementById('key-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+const ALL_CASES = [
+  {
+    id:'c1', name:'Mr. Harold Chen', age:68, sex:'M', complexity:'complex',
+    chief:'Progressive chest pressure, diaphoresis, and jaw pain for 2 hours',
+    tags:['Cardiology','ACS','Hypertension'],
+    vitals:{'BP':{v:'165/98',s:'abnormal'},'HR':{v:'94 bpm',s:'warning'},'RR':{v:'18/min',s:'normal'},'O₂':{v:'96%',s:'warning'},'Temp':{v:'37.1°C',s:'normal'},'BGL':{v:'9.2 mmol/L',s:'warning'}},
+    findings:[{l:'ECG',v:'ST elevations V1–V4, new LBBB'},{l:'Troponin',v:'0.8 ng/mL — elevated'},{l:'PMH',v:'HTN, T2DM, ex-smoker'},{l:'Meds',v:'Metformin, Lisinopril, ASA'}],
+    voiceGender:'male',
+    opening:"Doctor, I need help. There is this awful pressure in my chest — started a couple hours ago when I was mowing the lawn. My jaw hurts too.",
+    sp:`You are Harold Chen, 68, a retired engineer with STEMI. Crushing chest pressure radiating to jaw and left arm, started 2 hours ago mowing the lawn. Diaphoretic, mildly short of breath. History of hypertension and type 2 diabetes. Medications: metformin, lisinopril, aspirin. Ex-smoker. ECG: ST elevations V1-V4, new LBBB. Troponin elevated. Anxious and in pain. Answer in 2-3 short sentences. Do not volunteer information — answer only what is asked.`
+  },
+  {
+    id:'c2', name:'Ms. Priya Nair', age:44, sex:'F', complexity:'critical',
+    chief:'High fever, altered mental status, hypotension — post-op day 2',
+    tags:['Sepsis','Post-op','Critical'],
+    vitals:{'BP':{v:'82/50',s:'abnormal'},'HR':{v:'124 bpm',s:'abnormal'},'RR':{v:'26/min',s:'abnormal'},'O₂':{v:'91%',s:'abnormal'},'Temp':{v:'39.8°C',s:'abnormal'},'Lactate':{v:'4.2 mmol/L',s:'abnormal'}},
+    findings:[{l:'Op note',v:'Laparoscopic appendectomy 36h ago'},{l:'WBC',v:'22,000 with left shift'},{l:'Cultures',v:'Pending'},{l:'CXR',v:'RLL opacity'}],
+    voiceGender:'female',
+    opening:"I feel so sick. I had surgery and everything hurts. I cannot breathe right and I am so cold.",
+    sp:`You are Priya Nair, 44, schoolteacher with post-operative sepsis. Laparoscopic appendectomy 36 hours ago. Fever, hypotension, confusion. Severe abdominal pain at surgical site. Wound is red with discharge. Frightened and intermittently confused. Answer in 1-3 short sentences. You are critically ill.`
+  },
+  {
+    id:'c3', name:'Mr. Robert Okafor', age:55, sex:'M', complexity:'moderate',
+    chief:'Progressive dyspnea and bilateral leg swelling over 3 weeks',
+    tags:['Heart Failure','Dyspnea','Edema'],
+    vitals:{'BP':{v:'145/90',s:'warning'},'HR':{v:'88 bpm',s:'normal'},'RR':{v:'20/min',s:'warning'},'O₂':{v:'93%',s:'warning'},'Temp':{v:'36.9°C',s:'normal'},'BNP':{v:'1240 pg/mL',s:'abnormal'}},
+    findings:[{l:'CXR',v:'Cardiomegaly, pulmonary congestion'},{l:'Echo (prior)',v:'EF 30%, dilated LV'},{l:'PMH',v:'Non-ischemic CMP, COPD'},{l:'Compliance',v:'Missed meds 2 weeks'}],
+    voiceGender:'male',
+    opening:"My legs are so swollen I can barely get my shoes on. And I cannot lie flat anymore — I have been sleeping in my recliner for weeks.",
+    sp:`You are Robert Okafor, 55, high school principal with decompensated heart failure, known EF 30%. Stopped medications 2 weeks ago — ran out. Orthopnea, PND, bilateral leg edema to knee. Embarrassed about non-compliance. Admit it if asked directly. Answer in 2-4 sentences.`
+  },
+  {
+    id:'c4', name:'Ms. Dorothy Wells', age:72, sex:'F', complexity:'complex',
+    chief:'Acute confusion and falls — brought in by daughter',
+    tags:['Delirium','Geriatric','Hyponatremia'],
+    vitals:{'BP':{v:'138/82',s:'normal'},'HR':{v:'78 bpm',s:'normal'},'RR':{v:'16/min',s:'normal'},'O₂':{v:'97%',s:'normal'},'Temp':{v:'37.9°C',s:'warning'},'Na':{v:'128 mEq/L',s:'abnormal'}},
+    findings:[{l:'UA',v:'Positive nitrites, WBCs'},{l:'Na',v:'128 — was 138 last month'},{l:'Meds',v:'HCTZ added 3 weeks ago'},{l:'CT Head',v:'No acute intracranial process'}],
+    voiceGender:'female',
+    opening:"Where am I? I want to go home. I am Dorothy. What day is it, dear?",
+    sp:`You are Dorothy Wells, 72, retired librarian with mild dementia and acute delirium from hyponatremia and UTI. Confused — know your name but not date or place. Sometimes answer irrelevantly. Burning urination. Daughter present for history. Wax and wane in clarity. Keep responses short and sometimes confused.`
+  },
+  {
+    id:'c5', name:'Mr. James Russo', age:39, sex:'M', complexity:'critical',
+    chief:'Thunderclap headache — worst of life — with neck stiffness',
+    tags:['Neurology','SAH','Emergency'],
+    vitals:{'BP':{v:'178/104',s:'abnormal'},'HR':{v:'61 bpm',s:'normal'},'RR':{v:'14/min',s:'normal'},'O₂':{v:'99%',s:'normal'},'Temp':{v:'37.3°C',s:'normal'},'GCS':{v:'14/15',s:'warning'}},
+    findings:[{l:'CT Head',v:'Blood in basal cisterns'},{l:'LP',v:'Xanthochromia, non-clearing RBCs'},{l:'PMH',v:'Previously healthy'},{l:'Family Hx',v:'Father: brain aneurysm age 52'}],
+    voiceGender:'male',
+    opening:"Doctor, please help me. I was at the gym and my head just exploded. I have never felt pain like that in my life. I am scared.",
+    sp:`You are James Russo, 39, software developer with subarachnoid hemorrhage. Thunderclap headache at gym, brief loss of consciousness. Neck stiffness, photophobia. CT and LP confirm SAH. Father died of brain aneurysm at 52. Previously healthy. Scared. Answer in 2-3 sentences. Want to know if you will be okay.`
+  },
+  {
+    id:'c6', name:'Ms. Angela Torres', age:58, sex:'F', complexity:'moderate',
+    chief:'Fatigue, weight gain, cold intolerance, constipation for 4 months',
+    tags:['Endocrine','Hypothyroidism','Systemic'],
+    vitals:{'BP':{v:'130/80',s:'normal'},'HR':{v:'56 bpm',s:'warning'},'RR':{v:'14/min',s:'normal'},'O₂':{v:'98%',s:'normal'},'Temp':{v:'36.2°C',s:'warning'},'TSH':{v:'48 mIU/L',s:'abnormal'}},
+    findings:[{l:'TSH',v:'48 mIU/L — markedly elevated'},{l:'Free T4',v:'0.4 ng/dL — low'},{l:'Lipids',v:'Total cholesterol 268 mg/dL'},{l:'PMH',v:'No prior thyroid disease'}],
+    voiceGender:'female',
+    opening:"I am just so exhausted all the time. And I keep gaining weight no matter what I do. Something is really wrong, I can feel it.",
+    sp:`You are Angela Torres, 58, restaurant manager with severe hypothyroidism, TSH 48. Profound fatigue, 12 lb weight gain, always cold, constipated, hair loss, dry skin. Thought it was menopause. No thyroid history, no medications. Relieved someone is listening. If diagnosis reached, ask about treatment warmly. Answer in 2-4 sentences.`
+  },
+  {
+    id:'c7', name:'Mr. George Patel', age:61, sex:'M', complexity:'complex',
+    chief:'Sudden onset right-sided weakness and slurred speech — 90 minutes ago',
+    tags:['Neurology','Stroke','tPA candidate'],
+    vitals:{'BP':{v:'188/110',s:'abnormal'},'HR':{v:'82 bpm',s:'normal'},'RR':{v:'16/min',s:'normal'},'O₂':{v:'97%',s:'normal'},'Temp':{v:'37.0°C',s:'normal'},'BGL':{v:'7.1 mmol/L',s:'normal'}},
+    findings:[{l:'CT Head',v:'No hemorrhage — ischemic stroke'},{l:'NIHSS',v:'8 — moderate deficit'},{l:'Last well',v:'90 minutes ago, witnessed'},{l:'PMH',v:'Afib, not anticoagulated'}],
+    voiceGender:'male',
+    opening:"My... my arm. I cannot... lift it. And my words are... not right. What is... happening to me?",
+    sp:`You are George Patel, 61, retired accountant having an acute ischemic stroke. Right arm and leg weakness, facial droop, slurred speech. Onset 90 minutes ago clearly witnessed. Known atrial fibrillation, not on anticoagulation. Speech is effortful — speak slowly with pauses and word-finding difficulty. Frightened. Answer in short halting sentences. Wife is present and can fill in history.`
+  },
+  {
+    id:'c8', name:'Ms. Linda Kowalski', age:52, sex:'F', complexity:'moderate',
+    chief:'Polyuria, polydipsia, blurred vision — found to have BGL of 28 mmol/L',
+    tags:['Endocrine','DKA','New diabetes'],
+    vitals:{'BP':{v:'118/74',s:'normal'},'HR':{v:'108 bpm',s:'warning'},'RR':{v:'22/min',s:'warning'},'O₂':{v:'98%',s:'normal'},'Temp':{v:'37.2°C',s:'normal'},'BGL':{v:'28 mmol/L',s:'abnormal'}},
+    findings:[{l:'pH',v:'7.22 — metabolic acidosis'},{l:'Ketones',v:'4+ urine, serum 5.2'},{l:'HbA1c',v:'11.4% — undiagnosed'},{l:'PMH',v:'No prior diabetes'}],
+    voiceGender:'female',
+    opening:"I have been so thirsty for weeks, drinking gallons of water. And I keep going to the bathroom all night. My vision has been blurry too.",
+    sp:`You are Linda Kowalski, 52, accountant presenting with new-onset type 1 diabetes in DKA. Weeks of polyuria, polydipsia, blurred vision, 10 lb weight loss. No prior diabetes diagnosis. No family history. Mildly nauseated. Confused about why this is happening. Answer in 2-4 sentences. Cooperative and anxious.`
+  },
+  {
+    id:'c9', name:'Mr. Samuel Brooks', age:74, sex:'M', complexity:'complex',
+    chief:'Melena for 3 days, now lightheaded and pre-syncope',
+    tags:['GI Bleed','Hemodynamic','Urgent scope'],
+    vitals:{'BP':{v:'98/62',s:'abnormal'},'HR':{v:'118 bpm',s:'abnormal'},'RR':{v:'18/min',s:'normal'},'O₂':{v:'97%',s:'normal'},'Temp':{v:'36.8°C',s:'normal'},'Hgb':{v:'68 g/L',s:'abnormal'}},
+    findings:[{l:'Hgb',v:'68 g/L — down from 134'},{l:'INR',v:'2.8 — on warfarin'},{l:'Stool',v:'Melena, guaiac positive'},{l:'Meds',v:'Warfarin, naproxen, lisinopril'}],
+    voiceGender:'male',
+    opening:"I have had black tarry stools for three days. I did not want to bother anyone but today I nearly fainted getting up from the chair.",
+    sp:`You are Samuel Brooks, 74, retired teacher with upper GI bleed on warfarin. Three days of melena, now pre-syncope. On warfarin for afib, also takes naproxen for arthritis — has been taking extra doses. Pale, weak, dizzy on standing. Minimizes symptoms — did not want to worry family. Answer in 2-4 sentences. Cooperative but downplaying severity.`
+  },
+  {
+    id:'c10', name:'Ms. Fatima Al-Hassan', age:35, sex:'F', complexity:'moderate',
+    chief:'Pleuritic chest pain and dyspnea — 3 days post long-haul flight',
+    tags:['Pulmonology','PE','DVT'],
+    vitals:{'BP':{v:'128/82',s:'normal'},'HR':{v:'106 bpm',s:'warning'},'RR':{v:'24/min',s:'abnormal'},'O₂':{v:'92%',s:'abnormal'},'Temp':{v:'37.5°C',s:'normal'},'D-dimer':{v:'>4000 ng/mL',s:'abnormal'}},
+    findings:[{l:'CTPA',v:'Bilateral PE, no RV strain'},{l:'US legs',v:'Left popliteal DVT'},{l:'Travel',v:'14hr flight 3 days ago'},{l:'PMH',v:'OCP use, no prior clots'}],
+    voiceGender:'female',
+    opening:"I flew back from Dubai three days ago and since then I have had this sharp pain when I breathe in. And I am short of breath just walking across the room.",
+    sp:`You are Fatima Al-Hassan, 35, marketing executive with pulmonary embolism and DVT. 14-hour flight 3 days ago. Sharp pleuritic chest pain worse with inspiration, progressive dyspnea, left calf pain and swelling. On oral contraceptive pill. No prior clots, no family history. Healthy otherwise. Worried and slightly breathless when speaking. Answer in 2-4 sentences.`
+  },
+  {
+    id:'c11', name:'Mr. Thomas Bergmann', age:58, sex:'M', complexity:'critical',
+    chief:'Tearing chest and back pain radiating to abdomen — sudden onset',
+    tags:['Vascular','Aortic Dissection','Emergency'],
+    vitals:{'BP':{v:'210/118 R / 165/90 L',s:'abnormal'},'HR':{v:'98 bpm',s:'normal'},'RR':{v:'20/min',s:'normal'},'O₂':{v:'96%',s:'warning'},'Temp':{v:'37.1°C',s:'normal'},'BP diff':{v:'>20 mmHg arms',s:'abnormal'}},
+    findings:[{l:'CXR',v:'Widened mediastinum'},{l:'CT Aorta',v:'Type A dissection, ascending'},{l:'PMH',v:'Poorly controlled HTN, Marfan habitus'},{l:'Meds',v:'Amlodipine — often misses doses'}],
+    voiceGender:'male',
+    opening:"It came out of nowhere — the most terrible tearing pain in my chest and back. It felt like something was ripping inside me.",
+    sp:`You are Thomas Bergmann, 58, with acute type A aortic dissection. Sudden tearing chest and back pain radiating to abdomen. History of poorly controlled hypertension, tall Marfan habitus. Missed many antihypertensive doses. In severe pain, frightened. This is a surgical emergency. Answer in 2-3 sentences. Pale, anxious, in significant distress.`
+  },
+  {
+    id:'c12', name:'Ms. Ruth Nakamura', age:67, sex:'F', complexity:'moderate',
+    chief:'Three episodes of syncope over two weeks — one with head injury',
+    tags:['Cardiology','Syncope','Bradycardia'],
+    vitals:{'BP':{v:'142/88',s:'warning'},'HR':{v:'38 bpm',s:'abnormal'},'RR':{v:'14/min',s:'normal'},'O₂':{v:'98%',s:'normal'},'Temp':{v:'36.7°C',s:'normal'},'ECG':{v:'Complete heart block',s:'abnormal'}},
+    findings:[{l:'ECG',v:'Complete heart block, escape rate 38'},{l:'Meds',v:'Metoprolol 100mg BD, diltiazem'},{l:'PMH',v:'HTN, recent Lyme disease treatment'},{l:'Echo',v:'Normal LV function'}],
+    voiceGender:'female',
+    opening:"I have fainted three times in two weeks. The last time I hit my head on the counter. I did not know what was happening — one moment I was fine, the next I woke up on the floor.",
+    sp:`You are Ruth Nakamura, 67, retired teacher with complete heart block causing syncope. Three syncopal episodes in two weeks. On metoprolol 100mg twice daily AND diltiazem — both AV nodal blockers. Recent Lyme disease treatment. No prodrome before fainting. Hit head last episode. Anxious about recurrence. Answer in 2-4 sentences.`
+  },
+  {
+    id:'c13', name:'Mr. Carlos Rivera', age:45, sex:'M', complexity:'complex',
+    chief:'Jaundice, dark urine, pruritus — progressive over 6 weeks',
+    tags:['Hepatology','Cholestasis','Malignancy'],
+    vitals:{'BP':{v:'126/80',s:'normal'},'HR':{v:'74 bpm',s:'normal'},'RR':{v:'14/min',s:'normal'},'O₂':{v:'99%',s:'normal'},'Temp':{v:'36.9°C',s:'normal'},'Bili':{v:'185 μmol/L',s:'abnormal'}},
+    findings:[{l:'Bili',v:'185 μmol/L — direct predominant'},{l:'ALP/GGT',v:'Markedly elevated'},{l:'CT Abdomen',v:'Pancreatic head mass, biliary dilation'},{l:'CA 19-9',v:'Elevated'}],
+    voiceGender:'male',
+    opening:"My skin has been turning yellow over the past few weeks. My wife noticed it first. And the itching is unbearable — I cannot sleep.",
+    sp:`You are Carlos Rivera, 45, construction foreman with likely pancreatic cancer causing obstructive jaundice. Six weeks of progressive jaundice, dark urine, pale stools, severe pruritus, 8 kg weight loss. Mild epigastric discomfort. No alcohol use, no viral hepatitis risk factors. Scared but not yet told the diagnosis. Answer in 2-4 sentences. Worried about what this means.`
+  },
+  {
+    id:'c14', name:'Ms. Beverly Johnson', age:79, sex:'F', complexity:'moderate',
+    chief:'Increasing confusion, fever, and rigors — resident of nursing home',
+    tags:['Geriatric','Urosepsis','Delirium'],
+    vitals:{'BP':{v:'102/68',s:'abnormal'},'HR':{v:'112 bpm',s:'abnormal'},'RR':{v:'22/min',s:'warning'},'O₂':{v:'94%',s:'warning'},'Temp':{v:'39.2°C',s:'abnormal'},'WBC':{v:'18,400',s:'abnormal'}},
+    findings:[{l:'UA',v:'Grossly positive — nitrites, WBC casts'},{l:'PMH',v:'Dementia, T2DM, recurrent UTIs'},{l:'Meds',v:'Donepezil, metformin, amlodipine'},{l:'Cultures',v:'Pending — urine and blood'}],
+    voiceGender:'female',
+    opening:"I do not feel well. I am so cold and then so hot. Where is my daughter? I want to go home.",
+    sp:`You are Beverly Johnson, 79, nursing home resident with urosepsis and delirium. Baseline dementia, type 2 diabetes, recurrent UTIs. Fever, rigors, hypotension. Confused at baseline but markedly worse. Sometimes lucid, sometimes not. Daughter available by phone. Keep responses brief and sometimes confused or tangential. You are unwell and frightened.`
+  },
+  {
+    id:'c15', name:'Mr. David Park', age:29, sex:'M', complexity:'moderate',
+    chief:'Severe diffuse abdominal pain, vomiting — known Crohns disease',
+    tags:['GI','Crohns flare','IBD'],
+    vitals:{'BP':{v:'122/78',s:'normal'},'HR':{v:'102 bpm',s:'warning'},'RR':{v:'18/min',s:'normal'},'O₂':{v:'99%',s:'normal'},'Temp':{v:'38.3°C',s:'warning'},'CRP':{v:'148 mg/L',s:'abnormal'}},
+    findings:[{l:'CRP',v:'148 mg/L — markedly elevated'},{l:'CT Abdomen',v:'Terminal ileum thickening, no perforation'},{l:'Meds',v:'Adalimumab — last dose 3 weeks ago'},{l:'PMH',v:'Crohns diagnosed age 22'}],
+    voiceGender:'male',
+    opening:"This is the worst flare I have ever had. The pain is everywhere in my belly and I cannot keep anything down. I have not eaten in two days.",
+    sp:`You are David Park, 29, graduate student with severe Crohn's flare. Diagnosed age 22, on adalimumab but missed last two doses due to insurance issues. Severe diffuse abdominal pain, vomiting, unable to eat for 2 days. Fever. No perforation on CT but significant inflammation. Worried about losing his job if hospitalized long. Answer in 2-4 sentences. Exhausted and in pain.`
+  },
+  {
+    id:'c16', name:'Ms. Ingrid Sorensen', age:48, sex:'F', complexity:'critical',
+    chief:'Found unresponsive at home — empty bottles of medications nearby',
+    tags:['Toxicology','Overdose','Critical'],
+    vitals:{'BP':{v:'88/54',s:'abnormal'},'HR':{v:'48 bpm',s:'abnormal'},'RR':{v:'8/min',s:'abnormal'},'O₂':{v:'88%',s:'abnormal'},'Temp':{v:'35.1°C',s:'abnormal'},'GCS':{v:'8/15',s:'abnormal'}},
+    findings:[{l:'Bottles found',v:'Metoprolol, amlodipine, diazepam'},{l:'ECG',v:'Bradycardia, prolonged PR'},{l:'BGL',v:'3.1 mmol/L — hypoglycemic'},{l:'PMH',v:'Depression, HTN — neighbour called 911'}],
+    voiceGender:'female',
+    opening:"I... I just wanted it... to stop. I did not think anyone would find me.",
+    sp:`You are Ingrid Sorensen, 48, with mixed drug overdose — metoprolol, amlodipine, and diazepam. Bradycardic, hypotensive, obtunded, hypoglycemic. Speak very slowly, drowsily, with long pauses. You are barely conscious. When able to respond, speak in very short fragments. History of depression. You are not fully aware of your surroundings. This is a critical toxicology emergency.`
+  },
+  {
+    id:'c17', name:'Mr. Alistair Munroe', age:63, sex:'M', complexity:'moderate',
+    chief:'New-onset seizure — no prior history — with postictal confusion',
+    tags:['Neurology','New seizure','Space-occupying lesion'],
+    vitals:{'BP':{v:'148/92',s:'warning'},'HR':{v:'88 bpm',s:'normal'},'RR':{v:'16/min',s:'normal'},'O₂':{v:'97%',s:'normal'},'Temp':{v:'37.0°C',s:'normal'},'Na':{v:'136 mEq/L',s:'normal'}},
+    findings:[{l:'CT Head',v:'2.8cm ring-enhancing lesion, right frontal'},{l:'MRI',v:'Surrounding edema, midline shift'},{l:'PMH',v:'Lung cancer — treated 2 years ago'},{l:'Meds',v:'Levetiracetam started post-seizure'}],
+    voiceGender:'male',
+    opening:"I honestly do not remember what happened. My wife says I collapsed and started shaking. I have never had a seizure before in my life.",
+    sp:`You are Alistair Munroe, 63, retired journalist with new seizure and brain metastasis from previously treated lung cancer. Postictal and mildly confused. Does not remember the event itself. Had been having subtle headaches and word-finding difficulty for 3 weeks but dismissed it. History of lung cancer treated 2 years ago, thought to be in remission. Worried about what the scan means. Answer in 2-4 sentences. Mildly confused but increasingly lucid.`
+  },
+  {
+    id:'c18', name:'Ms. Yolanda Ferreira', age:41, sex:'F', complexity:'complex',
+    chief:'Diffuse joint pain, facial rash, fever, and new renal impairment',
+    tags:['Rheumatology','Lupus','Nephritis'],
+    vitals:{'BP':{v:'158/98',s:'abnormal'},'HR':{v:'92 bpm',s:'normal'},'RR':{v:'16/min',s:'normal'},'O₂':{v:'98%',s:'normal'},'Temp':{v:'38.4°C',s:'warning'},'Creat':{v:'198 μmol/L',s:'abnormal'}},
+    findings:[{l:'ANA',v:'Positive 1:640, anti-dsDNA elevated'},{l:'Creatinine',v:'198 μmol/L — was 72 last year'},{l:'UA',v:'Protein 3+, RBC casts'},{l:'C3/C4',v:'Complement low'}],
+    voiceGender:'female',
+    opening:"I have been so achey and tired for months. And now I have this rash on my face that gets worse in the sun. My doctor said my kidney tests are abnormal.",
+    sp:`You are Yolanda Ferreira, 41, graphic designer with SLE flare and lupus nephritis. Months of fatigue, joint pain, malar rash worsening in sunlight, pleuritis, hair loss. Now with new renal impairment. Known lupus for 5 years, previously well-controlled on hydroxychloroquine but ran out 4 months ago. Worried about her kidneys. Answer in 2-4 sentences. Cooperative and concerned.`
+  },
+  {
+    id:'c19', name:'Mr. Frank Deluca', age:70, sex:'M', complexity:'moderate',
+    chief:'Confusion, muscle weakness, and constipation — calcium of 3.42 mmol/L',
+    tags:['Endocrine','Hypercalcemia','Malignancy'],
+    vitals:{'BP':{v:'136/84',s:'normal'},'HR':{v:'62 bpm',s:'normal'},'RR':{v:'14/min',s:'normal'},'O₂':{v:'97%',s:'normal'},'Temp':{v:'36.8°C',s:'normal'},'Ca':{v:'3.42 mmol/L',s:'abnormal'}},
+    findings:[{l:'Ca',v:'3.42 mmol/L — severely elevated'},{l:'PTHrP',v:'Elevated'},{l:'CXR',v:'Hilar mass, right upper lobe'},{l:'PMH',v:'40 pack-year smoker'}],
+    voiceGender:'male',
+    opening:"I have been feeling so confused and weak lately. My muscles feel like jelly. And I have not had a proper bowel movement in a week.",
+    sp:`You are Frank Deluca, 70, retired plumber with hypercalcemia of malignancy from likely lung cancer. Confusion, profound muscle weakness, constipation, polyuria, nausea for 3 weeks. 40 pack-year smoking history. Has lost 7 kg in 2 months. Has noticed a cough but dismisses it. Does not know about the lung mass yet. Answer in 2-4 sentences. Cooperative but not well.`
+  },
+  {
+    id:'c20', name:'Ms. Amara Osei', age:32, sex:'F', complexity:'complex',
+    chief:'Severe headache, visual changes, and BP 178/118 at 34 weeks gestation',
+    tags:['Obstetric','Pre-eclampsia','Severe'],
+    vitals:{'BP':{v:'178/118',s:'abnormal'},'HR':{v:'96 bpm',s:'normal'},'RR':{v:'18/min',s:'normal'},'O₂':{v:'98%',s:'normal'},'Temp':{v:'37.1°C',s:'normal'},'Protein':{v:'4+ urine',s:'abnormal'}},
+    findings:[{l:'Urine protein',v:'4+ on dipstick, 5.2g/24hr'},{l:'Platelets',v:'88,000 — falling'},{l:'LFTs',v:'ALT 3x upper limit'},{l:'Fetal monitoring',v:'Category II tracing'}],
+    voiceGender:'female',
+    opening:"I have had the worst headache all day and now I am seeing spots. My ankles have been so swollen. I am scared about my baby.",
+    sp:`You are Amara Osei, 32, accountant at 34 weeks pregnant with severe pre-eclampsia with severe features. Severe headache, scotomata, 4+ proteinuria, thrombocytopenia, elevated LFTs — meeting criteria for HELLP. Extremely anxious about her baby. No prior hypertension. First pregnancy. Husband present. Answer in 2-4 sentences. Frightened and focused on fetal wellbeing.`
+  }
+];
+
+// Pick 6 fresh random cases every session — at least one of each complexity
+function pickSessionCases() {
+  const shuffled = [...ALL_CASES].sort(() => Math.random() - 0.5);
+  const moderate = shuffled.filter(c => c.complexity === "moderate");
+  const complex  = shuffled.filter(c => c.complexity === "complex");
+  const critical = shuffled.filter(c => c.complexity === "critical");
+  const guaranteed = [moderate[0], moderate[1], complex[0], complex[1], critical[0], critical[1]];
+  return guaranteed.sort(() => Math.random() - 0.5);
+}
+
+let CASES = pickSessionCases();
+
+// ── STATE ──
+let currentCase = null;
+let chatHistory = [];
+let isLoading = false;
+let isListening = false;
+let isSpeaking = false;
+let recognition = null;
+let lastPatientText = '';
+
+// ── SPEECH SYNTHESIS ──
+const synth = window.speechSynthesis;
+
+function getVoice(gender) {
+  const voices = synth.getVoices();
+  const femaleNames = ['Samantha','Karen','Victoria','Moira','Fiona','Tessa','Google UK English Female','Microsoft Zira'];
+  const maleNames   = ['Daniel','Tom','Alex','Gordon','Google UK English Male','Microsoft David'];
+  const preferred   = gender === 'female' ? femaleNames : maleNames;
+  for (const name of preferred) {
+    const v = voices.find(x => x.name.includes(name) && x.lang.startsWith('en'));
+    if (v) return v;
+  }
+  return voices.find(x => x.lang.startsWith('en-')) || voices[0] || null;
+}
+
+function speak(text, onDone) {
+  synth.cancel();
+  if (!text) { if (onDone) onDone(); return; }
+  const utt = new SpeechSynthesisUtterance(text);
+  const voice = getVoice(currentCase ? currentCase.voiceGender : 'female');
+  if (voice) utt.voice = voice;
+  utt.rate  = 0.9;
+  utt.pitch = 1.0;
+  utt.volume= 1.0;
+  utt.onstart = () => {
+    isSpeaking = true;
+    document.getElementById('speaking-pill').style.display='flex';
+    setStatus('speaking', 'Patient is speaking...');
+    setMicDisabled(true);
+  };
+  utt.onend = utt.onerror = () => {
+    isSpeaking = false;
+    document.getElementById('speaking-pill').style.display='none';
+    if (!isLoading) {
+      setStatus('idle', 'Press the microphone to speak');
+      setMicDisabled(false);
+    }
+    if (onDone) onDone();
+  };
+  synth.speak(utt);
+}
+
+function replayLast() {
+  if (!lastPatientText || isSpeaking || isListening) return;
+  speak(lastPatientText);
+}
+
+// ── SPEECH RECOGNITION ──
+// Accumulated transcript across multiple recognition segments
+let accumulatedText = '';
+
+function buildRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'en-US';
+  r.continuous = true;   // keep mic open
+  r.interimResults = true;
+
+  r.onresult = (e) => {
+    let interim = '';
+    let newFinal = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) newFinal += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    if (newFinal) accumulatedText += newFinal;
+    const display = (accumulatedText + interim).trim();
+    const lt = document.getElementById('live-text');
+    lt.textContent = display;
+    // show Send button as soon as there is any text
+    if (display) document.getElementById('sendbtn').style.display = 'inline-flex';
+  };
+
+  r.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      stopListening(); setStatus('idle', 'Microphone access denied — check browser settings');
+    } else if (e.error === 'no-speech') {
+      // silence timeout — restart so she can keep going
+      if (isListening) restartRecognition();
+    } else {
+      stopListening(); setStatus('idle', "Couldn't hear you — try again");
+    }
+  };
+
+  r.onend = () => {
+    // auto-restart if still in listening mode (handles browser cutting off)
+    if (isListening) restartRecognition();
+  };
+
+  return r;
+}
+
+function restartRecognition() {
+  if (!isListening) return;
+  try { if (recognition) recognition.stop(); } catch(e){}
+  recognition = null;
+  setTimeout(() => {
+    if (!isListening) return;
+    recognition = buildRecognition();
+    try { recognition.start(); } catch(e){ stopListening(); }
+  }, 200);
+}
+
+function sendAccumulated() {
+  const text = accumulatedText.trim() || document.getElementById('live-text').textContent.trim();
+  if (!text) return;
+  stopListening();
+  document.getElementById('sendbtn').style.display = 'none';
+  document.getElementById('live-text').textContent = '';
+  accumulatedText = '';
+  sendToPatient(text);
+}
+
+function toggleMic() {
+  if (isSpeaking) { synth.cancel(); return; }
+  if (isLoading) return;
+  if (isListening) {
+    // stop listening but keep accumulated text — let user press Send
+    isListening = false;
+    if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+    setMicListening(false);
+    setStatus('idle', accumulatedText.trim() ? 'Press Send when ready, or mic to keep speaking' : 'Press the microphone to speak');
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    setStatus('idle', 'Voice not supported — please open in Chrome');
+    return;
+  }
+  // Only reset accumulator if starting fresh (no text yet)
+  if (!accumulatedText.trim()) {
+    document.getElementById('live-text').textContent = '';
+    document.getElementById('sendbtn').style.display = 'none';
+  }
+  recognition = buildRecognition();
+  if (!recognition) return;
+  isListening = true;
+  setMicListening(true);
+  setStatus('listening', 'Listening... take your time');
+  try { recognition.start(); } catch(e) { stopListening(); }
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  setMicListening(false);
+  if (!isLoading && !isSpeaking) setStatus('idle', 'Press the microphone to speak');
+}
+
+function setMicListening(on) {
+  const btn = document.getElementById('micbtn');
+  btn.style.background = on ? 'var(--red)' : (isSpeaking ? 'var(--teal)' : 'var(--navy)');
+}
+
+function setMicDisabled(on) {
+  const btn = document.getElementById('micbtn');
+  btn.style.opacity = on ? '0.5' : '1';
+  btn.style.cursor = on ? 'not-allowed' : 'pointer';
+}
+
+function setStatus(state, text) {
+  const el = document.getElementById('vstatus');
+  el.className = 'vbar-status' + (state !== 'idle' ? ' ' + state : '');
+  el.textContent = text;
+}
+
+// ── API CALL ──
+async function sendToPatient(doctorText) {
+  if (!doctorText || isLoading) return;
+  isLoading = true;
+  setMicDisabled(true);
+  setStatus('idle', 'Thinking...');
+
+  addDoctorMsg(doctorText);
+  chatHistory.push({ role: 'user', content: doctorText });
+  const typingEl = addTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 300,
+        system: currentCase.sp,
+        messages: chatHistory
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.map(b => b.text || '').join('') || "I'm sorry, could you repeat that?";
+
+    typingEl.remove();
+    addPatientMsg(reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+    lastPatientText = reply;
+    document.getElementById('replay-btn').style.display='flex';
+
+    isLoading = false;
+    speak(reply);
+  } catch (err) {
+    typingEl.remove();
+    const fallback = "I'm sorry, I didn't hear you clearly.";
+    addPatientMsg(fallback);
+    lastPatientText = fallback;
+    isLoading = false;
+    speak(fallback);
+  }
+}
+
+// ── CHAT UI ──
+function initials(name) { return name.split(' ').slice(-2).map(n => n[0]).join(''); }
+
+function addSysMsg(text) {
+  const el = document.createElement('div');
+  el.className = 'msg system';
+  el.innerHTML = `<div class="mbub">${text}</div>`;
+  document.getElementById('transcript').appendChild(el);
+  scrollT();
+}
+
+function addPatientMsg(text) {
+  const el = document.createElement('div');
+  el.className = 'msg patient';
+  el.innerHTML = `<div class="mav">${initials(currentCase.name)}</div><div><div class="msender">${currentCase.name}</div><div class="mbub">${text}</div></div>`;
+  document.getElementById('transcript').appendChild(el);
+  scrollT();
+  return el;
+}
+
+function addDoctorMsg(text) {
+  const el = document.createElement('div');
+  el.className = 'msg doctor';
+  el.innerHTML = `<div class="mav">Dr</div><div><div class="msender">You</div><div class="mbub">${text}</div></div>`;
+  document.getElementById('transcript').appendChild(el);
+  scrollT();
+  return el;
+}
+
+function addTyping() {
+  const el = document.createElement('div');
+  el.className = 'msg patient';
+  el.innerHTML = `<div class="mav">${initials(currentCase.name)}</div><div><div class="msender">${currentCase.name}</div><div class="mbub"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div></div>`;
+  document.getElementById('transcript').appendChild(el);
+  scrollT();
+  return el;
+}
+
+function scrollT() {
+  const t = document.getElementById('transcript');
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── SCREENS ──
+function showWelcome() {
+  synth.cancel();
+  if (recognition) { try { recognition.stop(); } catch(e){} }
+  setScreen('sw');
+}
+
+function showCases() {
+  synth.cancel();
+  renderCases();
+  setScreen('sc');
+}
+
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function renderCases() {
+  document.getElementById('cgrid').innerHTML = CASES.map(c => `
+    <div class="ccard ${c.complexity}" onclick="startCase('${c.id}')">
+      <div class="chdr">
+        <div><div class="pname">${c.name}</div><div class="pmeta">${c.age}y ${c.sex==='M'?'Male':'Female'}</div></div>
+        <span class="cbadge ${c.complexity}">${c.complexity}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);padding-top:8px;border-top:1px solid var(--border);line-height:1.5">Awaiting consultation</div>
+    </div>`).join('');
+}
+
+function startCase(id) {
+  currentCase = CASES.find(c => c.id === id);
+  chatHistory  = [];
+  lastPatientText = '';
+  isLoading    = false;
+  isListening  = false;
+  isSpeaking   = false;
+
+  document.getElementById('topname').textContent = currentCase.name + ', ' + currentCase.age + (currentCase.sex==='M'?' M':' F');
+  document.getElementById('replay-btn').style.display='none';
+  document.getElementById('speaking-pill').style.display='none';
+  document.getElementById('sendbtn').style.display='none';
+  document.getElementById('live-text').textContent='';
+  accumulatedText='';
+
+  // sidebar
+  // sidebar removed for mobile
+
+  document.getElementById('vsec').innerHTML =
+    Object.entries(currentCase.vitals).map(([k,v])=>`
+      <div class="vs-item"><div class="vs-name">${k}</div><div class="vs-val ${v.s!=='normal'?v.s:''}">${v.v}</div></div>`).join('');
+
+  
+
+  // transcript
+  document.getElementById('transcript').innerHTML = '';
+  addSysMsg(`Now consulting ${currentCase.name}. Press the microphone and speak your question.`);
+
+  const opening = currentCase.opening || "Doctor, thank you for seeing me.";
+  addPatientMsg(opening);
+  chatHistory.push({ role: 'assistant', content: opening });
+  lastPatientText = opening;
+
+  setScreen('sco');
+  setStatus('idle', 'Press the microphone to speak');
+  setMicListening(false);
+  setMicDisabled(false);
+
+  // speak opening after short delay (let voices load)
+  setTimeout(() => {
+    speak(opening, () => {
+      document.getElementById('replay-btn').style.display='flex';
+    });
+  }, 800);
+}
+
+// ── END CASE ──
+let sumRecognition = null;
+let sumListening = false;
+let sumAccumulated = '';
+
+function endCase() {
+  synth.cancel();
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  isListening = false;
+  accumulatedText = '';
+
+  // Reset phase 1
+  sumAccumulated = '';
+  sumListening = false;
+  document.getElementById('sum-spoken-text').textContent = '';
+  document.getElementById('sum-sendbtn').style.display = 'none';
+  document.getElementById('sum-micbtn').style.background = 'var(--navy)';
+  document.getElementById('sum-status').textContent = 'Press the microphone and speak your summary';
+  document.getElementById('sum-patient-name').textContent = currentCase.name;
+  document.getElementById('sum-phase1').style.display = 'block';
+  document.getElementById('sum-phase2').style.display = 'none';
+  document.getElementById('sum-fb-text').innerHTML = '<span class="sdot"></span><span class="sdot"></span><span class="sdot"></span>';
+
+  setScreen('ss');
+
+  // Prompt her aloud
+  setTimeout(() => {
+    const prompt = `Consultation complete. Before I give you the full diagnosis, please tell me: what do you think is wrong with ${currentCase.name}, and what are your next steps?`;
+    speakSummary(prompt);
+  }, 500);
+}
+
+function speakSummary(text, onDone) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  const voices = synth.getVoices();
+  const coach = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || (v.lang.startsWith('en') && v.name !== (currentCase ? getVoice(currentCase.voiceGender) : null)?.name));
+  if (coach) utt.voice = coach;
+  utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1;
+  utt.onend = () => { if (onDone) onDone(); };
+  synth.speak(utt);
+}
+
+function toggleSumMic() {
+  if (sumListening) {
+    stopSumListening();
+  } else {
+    startSumListening();
+  }
+}
+
+function buildSumRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'en-US';
+  r.continuous = true;
+  r.interimResults = true;
+  r.onresult = (e) => {
+    let interim = '', newFinal = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) newFinal += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    if (newFinal) sumAccumulated += newFinal;
+    const display = (sumAccumulated + interim).trim();
+    document.getElementById('sum-spoken-text').textContent = display;
+    if (display) document.getElementById('sum-sendbtn').style.display = 'block';
+  };
+  r.onerror = (e) => {
+    if (e.error === 'no-speech' && sumListening) restartSumRecognition();
+    else if (e.error !== 'not-allowed') { /* ignore */ }
+  };
+  r.onend = () => { if (sumListening) restartSumRecognition(); };
+  return r;
+}
+
+function restartSumRecognition() {
+  if (!sumListening) return;
+  try { if (sumRecognition) sumRecognition.stop(); } catch(e){}
+  sumRecognition = null;
+  setTimeout(() => {
+    if (!sumListening) return;
+    sumRecognition = buildSumRecognition();
+    try { sumRecognition.start(); } catch(e){ stopSumListening(); }
+  }, 200);
+}
+
+function startSumListening() {
+  sumRecognition = buildSumRecognition();
+  if (!sumRecognition) return;
+  sumListening = true;
+  document.getElementById('sum-micbtn').style.background = 'var(--red)';
+  document.getElementById('sum-status').textContent = 'Listening... take your time';
+  try { sumRecognition.start(); } catch(e){ stopSumListening(); }
+}
+
+function stopSumListening() {
+  sumListening = false;
+  if (sumRecognition) { try { sumRecognition.stop(); } catch(e){} sumRecognition = null; }
+  document.getElementById('sum-micbtn').style.background = 'var(--navy)';
+  const hasText = sumAccumulated.trim();
+  document.getElementById('sum-status').textContent = hasText
+    ? 'Press Send when ready, or mic to keep speaking'
+    : 'Press the microphone and speak your summary';
+}
+
+async function submitSummary() {
+  synth.cancel();
+  stopSumListening();
+  const doctorSummary = sumAccumulated.trim() || '';
+
+  // Show phase 2
+  document.getElementById('sum-phase1').style.display = 'none';
+  document.getElementById('sum-phase2').style.display = 'block';
+  document.getElementById('sum-title').textContent = `${currentCase.name} — Full Diagnosis`;
+  document.getElementById('sum-sub').textContent = `${currentCase.age}y ${currentCase.sex==='M'?'male':'female'}`;
+  document.getElementById('sum-fb-text').innerHTML = '<span class="sdot"></span><span class="sdot"></span><span class="sdot"></span>';
+
+  // Show doctor's summary if they gave one
+  if (doctorSummary) {
+    document.getElementById('sum-doctor-said').textContent = doctorSummary;
+    document.getElementById('sum-doctor-block').style.display = 'block';
+  }
+
+  const conv = chatHistory.map(m => `${m.role==='user'?'Doctor':'Patient'}: ${m.content}`).join('\n');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 500,
+        system: `You are a warm, encouraging clinical supervisor for a doctor who is recovering from a stroke and practicing medicine again. 
+Your response has two parts:
+1. DIAGNOSIS: State the correct diagnosis and 2-3 key findings that support it. Be specific with medical terminology.
+2. NEXT STEPS: List 3-4 concrete next steps (investigations, treatments, referrals).
+3. FEEDBACK: If the doctor gave a verbal summary, compare it warmly to the correct answer — celebrate what they got right, gently note anything missed. If they skipped the summary, encourage them to try next time.
+Be warm, specific, and treat them fully as a physician colleague. Never mention stroke or aphasia. Keep the total response to 6-8 sentences.`,
+        messages: [{ role: 'user', content: `Case: ${currentCase.name}, ${currentCase.chief}\nTrue diagnosis tags: ${currentCase.tags.join(', ')}\n\nConsultation transcript:\n${conv || 'No conversation recorded.'}\n\nDoctor verbal summary: ${doctorSummary || 'None given.'}` }]
+      })
+    });
+    const data = await res.json();
+    const fb = data.content?.map(b => b.text || '').join('') || 'Well done completing this case.';
+    document.getElementById('sum-fb-text').textContent = fb;
+    setTimeout(() => speakSummary(fb), 400);
+  } catch(e) {
+    const fb = 'Great work on this case. Keep practicing — every consultation builds your skills.';
+    document.getElementById('sum-fb-text').textContent = fb;
+    setTimeout(() => speakSummary(fb), 400);
+  }
+}
+
+// ── INIT ──
+// Check browser support
+window.addEventListener('load', () => {
+  // pre-fill API key input if already saved
+  const saved = localStorage.getItem('aphasia_api_key') || '';
+  const inp = document.getElementById('api-key-input');
+  if (inp && saved) { inp.value = saved; setKeyStatus('Key loaded — ready to go!', '#5dcaa5'); }
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    document.getElementById('mic-warning').style.display = 'block';
+  }
+  // pre-load voices
+  synth.getVoices();
+  if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = () => synth.getVoices();
+  }
+});
+</script>
+</body>
+</html>
