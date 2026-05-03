@@ -129,16 +129,18 @@ body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gray);color:v
   <h1 class="wtitle">Welcome back, <em>Doctor.</em></h1>
   <p class="wsub">Choose a patient, then press the microphone and speak your questions. The patient will respond aloud.</p>
 
-  <div style="margin-bottom:1.5rem;width:100%;max-width:380px">
-    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em">Anthropic API Key</div>
+  <div style="margin-bottom:1.25rem;width:100%;max-width:360px">
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Anthropic API Key</div>
     <div style="display:flex;gap:8px">
-      <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
-        style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+      <input id="api-key-input" type="password" placeholder="sk-ant-..."
+        style="flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"
         onkeydown="if(event.key==='Enter')saveKey()"/>
-      <button onclick="saveKey()" style="background:rgba(29,158,117,0.4);border:1px solid rgba(29,158,117,0.5);color:#fff;padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap">Save Key</button>
+      <button onclick="saveKey()" style="background:rgba(29,158,117,0.4);border:1px solid rgba(29,158,117,0.5);color:#fff;padding:12px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;white-space:nowrap;min-height:48px">Save</button>
     </div>
-    <div id="key-status" style="font-size:11px;margin-top:6px;min-height:16px"></div>
+    <div id="key-status" style="font-size:11px;margin-top:5px;min-height:16px"></div>
   </div>
+
+
 
   <button class="btn-p" onclick="showCases()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.31 6-6.72h-1.7z"/></svg>
@@ -251,17 +253,170 @@ body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gray);color:v
 
 <script>
 let API_KEY = localStorage.getItem('aphasia_api_key') || '';
+let EL_KEY  = localStorage.getItem('aphasia_el_key')  || '';
 
 function saveKey() {
   const val = document.getElementById('api-key-input').value.trim();
-  if (!val) { setKeyStatus('Please paste your API key first.', '#f09595'); return; }
+  if (!val) { setKeyStatus('Please paste your Anthropic key.', '#f09595'); return; }
   API_KEY = val;
   localStorage.setItem('aphasia_api_key', val);
-  setKeyStatus('Key saved — you are ready!', '#5dcaa5');
+  setKeyStatus('✓ Saved', '#5dcaa5');
+}
+function saveElKey() {
+  const val = document.getElementById('el-key-input').value.trim();
+  if (!val) { setElKeyStatus('Please paste your ElevenLabs key.', '#f09595'); return; }
+  EL_KEY = val;
+  localStorage.setItem('aphasia_el_key', val);
+  setElKeyStatus('✓ Saved — realistic voices enabled', '#5dcaa5');
 }
 function setKeyStatus(msg, color) {
   const el = document.getElementById('key-status');
   if (el) { el.textContent = msg; el.style.color = color; }
+}
+function setElKeyStatus(msg, color) {
+  const el = document.getElementById('el-key-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+// ElevenLabs voice IDs — matched to patient personality/age/gender
+// Using pre-built voices from the ElevenLabs library
+const EL_VOICES = {
+  // older male, warm but strained
+  'male_older':   'pNInz6obpgDQGcFmaJgB', // Adam
+  // middle-aged male, clear
+  'male_mid':     'VR6AewLTigWG4xSOukaG', // Arnold  
+  // younger male, anxious
+  'male_young':   'ErXwobaYiN019PkySvjV', // Antoni
+  // older female, warm
+  'female_older': 'EXAVITQu4vr4xnSDxMaL', // Bella
+  // middle-aged female, clear
+  'female_mid':   '21m00Tcm4TlvDq8ikWAM', // Rachel
+  // younger female
+  'female_young': 'AZnzlk1XvdvUeBnXmlld', // Domi
+  // coach voice — warm, clear, encouraging
+  'coach':        '21m00Tcm4TlvDq8ikWAM', // Rachel
+};
+
+function getELVoiceId(caseData) {
+  if (!caseData) return EL_VOICES.coach;
+  const g = caseData.voiceGender;
+  const age = caseData.age;
+  if (g === 'male') {
+    if (age >= 65) return EL_VOICES.male_older;
+    if (age >= 45) return EL_VOICES.male_mid;
+    return EL_VOICES.male_young;
+  } else {
+    if (age >= 65) return EL_VOICES.female_older;
+    if (age >= 45) return EL_VOICES.female_mid;
+    return EL_VOICES.female_young;
+  }
+}
+
+let currentAudio = null;
+
+async function speakElevenLabs(text, voiceId, onDone, isCoach) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+
+  const vsettings = isCoach
+    ? { stability: 0.6, similarity_boost: 0.7, style: 0.2, use_speaker_boost: true }
+    : { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true };
+
+  return new Promise((resolve) => {
+    const ws = new WebSocket(
+      `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream-input?model_id=eleven_turbo_v2_5&output_format=mp3_44100_128`
+    );
+
+    const chunks = [];
+    let streamDone = false;
+
+    ws.onopen = () => {
+      // Send auth + config
+      ws.send(JSON.stringify({
+        xi_api_key: EL_KEY,
+        text: ' ',
+        voice_settings: vsettings,
+        generation_config: { chunk_length_schedule: [120, 160, 250, 290] }
+      }));
+      // Send actual text
+      ws.send(JSON.stringify({ text: text }));
+      // Signal end of text
+      ws.send(JSON.stringify({ text: '' }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.audio) {
+          const bytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+          chunks.push(bytes);
+        }
+        if (data.isFinal) {
+          streamDone = true;
+          ws.close();
+        }
+      } catch(e) {}
+    };
+
+    ws.onclose = async () => {
+      if (!chunks.length) {
+        // fallback to browser
+        if (!isCoach) speakBrowser(text, currentCase ? currentCase.voiceGender : 'female', onDone);
+        else speakBrowserCoach(text, onDone);
+        resolve();
+        return;
+      }
+      // Combine chunks into blob and play
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const combined = new Uint8Array(total);
+      let offset = 0;
+      for (const c of chunks) { combined.set(c, offset); offset += c.length; }
+      const blob = new Blob([combined], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      currentAudio = audio;
+
+      if (!isCoach) {
+        isSpeaking = true;
+        document.getElementById('speaking-pill').style.display='flex';
+        setStatus('speaking', 'Patient is speaking...');
+        setMicDisabled(true);
+      }
+
+      audio.onended = () => {
+        currentAudio = null;
+        URL.revokeObjectURL(url);
+        if (!isCoach) {
+          isSpeaking = false;
+          document.getElementById('speaking-pill').style.display='none';
+          if (!isLoading) { setStatus('idle','Press the microphone to speak'); setMicDisabled(false); }
+        }
+        if (onDone) onDone();
+        resolve();
+      };
+      audio.onerror = () => {
+        currentAudio = null;
+        if (!isCoach) isSpeaking = false;
+        if (onDone) onDone();
+        resolve();
+      };
+      await audio.play().catch(() => {
+        if (!isCoach) speakBrowser(text, currentCase ? currentCase.voiceGender : 'female', onDone);
+        else speakBrowserCoach(text, onDone);
+        resolve();
+      });
+    };
+
+    ws.onerror = () => {
+      ws.close();
+      if (!isCoach) speakBrowser(text, currentCase ? currentCase.voiceGender : 'female', onDone);
+      else speakBrowserCoach(text, onDone);
+      resolve();
+    };
+  });
+}
+
+async function speakElevenLabsCoach(text, onDone) {
+  return speakElevenLabs(text, EL_VOICES.coach, onDone, true);
 }
 
 const ALL_CASES = [
@@ -490,48 +645,160 @@ let lastPatientText = '';
 
 // ── SPEECH SYNTHESIS ──
 const synth = window.speechSynthesis;
+let voiceCache = [];
 
-function getVoice(gender) {
-  const voices = synth.getVoices();
-  const femaleNames = ['Samantha','Karen','Victoria','Moira','Fiona','Tessa','Google UK English Female','Microsoft Zira'];
-  const maleNames   = ['Daniel','Tom','Alex','Gordon','Google UK English Male','Microsoft David'];
-  const preferred   = gender === 'female' ? femaleNames : maleNames;
+// Load and cache all available voices
+function loadVoices() {
+  voiceCache = synth.getVoices();
+  if (!voiceCache.length) {
+    synth.onvoiceschanged = () => { voiceCache = synth.getVoices(); };
+  }
+}
+loadVoices();
+
+// Pick the best available voice for a patient
+// iOS/Safari has excellent voices: Siri (US/UK/AU), Eloquence voices
+function pickVoice(caseData, isCoach) {
+  const voices = voiceCache.length ? voiceCache : synth.getVoices();
+  const gender = caseData ? caseData.voiceGender : 'female';
+  const age = caseData ? caseData.age : 50;
+
+  // Tiered preference lists — iOS Siri voices first, then desktop
+  const femalePref = [
+    'Samantha',        // iOS US female — excellent
+    'Siri (United States)', 
+    'Siri (United Kingdom)',
+    'Karen',           // iOS AU female
+    'Moira',           // iOS Irish
+    'Victoria',        // iOS
+    'Fiona',           // iOS Scottish
+    'Tessa',           // iOS South African
+    'Kate',
+    'Serena',
+    'Google US English Female',
+    'Google UK English Female',
+    'Microsoft Zira',
+  ];
+  const malePref = [
+    'Daniel',          // iOS UK male — very natural
+    'Siri (United Kingdom)',
+    'Siri (Australia)',
+    'Alex',            // iOS US male
+    'Tom',             // iOS
+    'Gordon',          // iOS
+    'Arthur',          // iOS UK
+    'Fred',
+    'Google US English Male',
+    'Google UK English Male',
+    'Microsoft David',
+  ];
+
+  // Coach gets a warm, clear female voice — different from patient
+  if (isCoach) {
+    for (const name of ['Samantha','Karen','Serena','Moira','Victoria','Kate']) {
+      const v = voices.find(x => x.name.includes(name) && x.lang.startsWith('en'));
+      if (v) return v;
+    }
+  }
+
+  const preferred = gender === 'female' ? femalePref : malePref;
   for (const name of preferred) {
     const v = voices.find(x => x.name.includes(name) && x.lang.startsWith('en'));
     if (v) return v;
   }
-  return voices.find(x => x.lang.startsWith('en-')) || voices[0] || null;
+  // Fallback: any English voice
+  const anyEnglish = voices.filter(x => x.lang.startsWith('en'));
+  // Try to match gender by name heuristics
+  if (gender === 'male') {
+    const m = anyEnglish.find(v => /male/i.test(v.name));
+    if (m) return m;
+  }
+  return anyEnglish[0] || voices[0] || null;
 }
 
-function speak(text, onDone) {
+// Tune rate/pitch per patient personality
+function getVoiceParams(caseData, isCoach) {
+  if (isCoach) return { rate: 0.88, pitch: 1.08 };
+  if (!caseData) return { rate: 0.9, pitch: 1.0 };
+  const age = caseData.age;
+  const complexity = caseData.complexity;
+  // Older patients speak slightly slower
+  let rate = age >= 70 ? 0.82 : age >= 55 ? 0.87 : 0.92;
+  // Critical/distressed patients sound more strained
+  let pitch = complexity === 'critical' ? 1.05 : 1.0;
+  // Adjust for specific cases
+  if (caseData.id === 'c4') { rate = 0.78; pitch = 1.02; } // Dorothy — elderly, confused
+  if (caseData.id === 'c7') { rate = 0.72; pitch = 0.95; } // George stroke — halting
+  if (caseData.id === 'c5') { rate = 0.95; pitch = 1.08; } // James — young, panicked
+  if (caseData.id === 'c2') { rate = 0.80; pitch = 1.06; } // Priya — sick, breathy
+  return { rate, pitch };
+}
+
+function speakBrowser(text, caseData, onDone, isCoach) {
   synth.cancel();
   if (!text) { if (onDone) onDone(); return; }
-  const utt = new SpeechSynthesisUtterance(text);
-  const voice = getVoice(currentCase ? currentCase.voiceGender : 'female');
-  if (voice) utt.voice = voice;
-  utt.rate  = 0.9;
-  utt.pitch = 1.0;
-  utt.volume= 1.0;
-  utt.onstart = () => {
-    isSpeaking = true;
-    document.getElementById('speaking-pill').style.display='flex';
-    setStatus('speaking', 'Patient is speaking...');
-    setMicDisabled(true);
-  };
-  utt.onend = utt.onerror = () => {
-    isSpeaking = false;
-    document.getElementById('speaking-pill').style.display='none';
-    if (!isLoading) {
-      setStatus('idle', 'Press the microphone to speak');
-      setMicDisabled(false);
+
+  // Split into sentences for more natural delivery on iOS
+  // (iOS cuts off long utterances)
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  let idx = 0;
+
+  const speakNext = () => {
+    if (idx >= sentences.length) {
+      isSpeaking = false;
+      if (!isCoach) {
+        document.getElementById('speaking-pill').style.display='none';
+        if (!isLoading) { setStatus('idle','Press the microphone to speak'); setMicDisabled(false); }
+      }
+      if (onDone) onDone();
+      return;
     }
-    if (onDone) onDone();
+    const sentence = sentences[idx++].trim();
+    if (!sentence) { speakNext(); return; }
+
+    const utt = new SpeechSynthesisUtterance(sentence);
+    const voice = pickVoice(caseData, isCoach);
+    if (voice) utt.voice = voice;
+    const params = getVoiceParams(caseData, isCoach);
+    utt.rate   = params.rate;
+    utt.pitch  = params.pitch;
+    utt.volume = 1.0;
+
+    if (idx === 1 && !isCoach) {
+      // First sentence — set speaking state
+      isSpeaking = true;
+      document.getElementById('speaking-pill').style.display='flex';
+      setStatus('speaking', 'Patient is speaking...');
+      setMicDisabled(true);
+    }
+
+    utt.onend = speakNext;
+    utt.onerror = () => {
+      isSpeaking = false;
+      if (!isCoach) {
+        document.getElementById('speaking-pill').style.display='none';
+        if (!isLoading) { setStatus('idle','Press the microphone to speak'); setMicDisabled(false); }
+      }
+      if (onDone) onDone();
+    };
+    synth.speak(utt);
   };
-  synth.speak(utt);
+
+  speakNext();
+}
+
+// Main speak
+function speak(text, onDone) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  synth.cancel();
+  if (!text) { if (onDone) onDone(); return; }
+  speakBrowser(text, currentCase, onDone, false);
 }
 
 function replayLast() {
-  if (!lastPatientText || isSpeaking || isListening) return;
+  if (!lastPatientText || isListening) return;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; isSpeaking = false; }
+  synth.cancel();
   speak(lastPatientText);
 }
 
@@ -679,7 +946,7 @@ async function sendToPatient(doctorText) {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 300,
         system: currentCase.sp,
         messages: chatHistory
@@ -859,13 +1126,9 @@ function endCase() {
 
 function speakSummary(text, onDone) {
   synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  const voices = synth.getVoices();
-  const coach = voices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || (v.lang.startsWith('en') && v.name !== (currentCase ? getVoice(currentCase.voiceGender) : null)?.name));
-  if (coach) utt.voice = coach;
-  utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1;
-  utt.onend = () => { if (onDone) onDone(); };
-  synth.speak(utt);
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (!text) { if (onDone) onDone(); return; }
+  speakBrowser(text, null, onDone, true);
 }
 
 function toggleSumMic() {
@@ -962,7 +1225,7 @@ async function submitSummary() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         system: `You are a warm, encouraging clinical supervisor for a doctor who is recovering from a stroke and practicing medicine again. 
 Your response has two parts:
@@ -990,7 +1253,10 @@ window.addEventListener('load', () => {
   // pre-fill API key input if already saved
   const saved = localStorage.getItem('aphasia_api_key') || '';
   const inp = document.getElementById('api-key-input');
-  if (inp && saved) { inp.value = saved; setKeyStatus('Key loaded — ready to go!', '#5dcaa5'); }
+  if (inp && saved) { inp.value = saved; setKeyStatus('✓ Key loaded', '#5dcaa5'); }
+  const elSaved = localStorage.getItem('aphasia_el_key') || '';
+  const elInp = document.getElementById('el-key-input');
+  if (elInp && elSaved) { elInp.value = elSaved; setElKeyStatus('✓ Realistic voices enabled', '#5dcaa5'); }
   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
     document.getElementById('mic-warning').style.display = 'block';
   }
