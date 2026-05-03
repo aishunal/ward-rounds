@@ -245,52 +245,34 @@ body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gray);color:v
 <script>
 // Keys are stored securely in server environment variables
 
-// ElevenLabs voice IDs — matched to patient personality/age/gender
-// Using pre-built voices from the ElevenLabs library
-const EL_VOICES = {
-  // older male, warm but strained
-  'male_older':   'pNInz6obpgDQGcFmaJgB', // Adam
-  // middle-aged male, clear
-  'male_mid':     'VR6AewLTigWG4xSOukaG', // Arnold  
-  // younger male, anxious
-  'male_young':   'ErXwobaYiN019PkySvjV', // Antoni
-  // older female, warm
-  'female_older': 'EXAVITQu4vr4xnSDxMaL', // Bella
-  // middle-aged female, clear
-  'female_mid':   '21m00Tcm4TlvDq8ikWAM', // Rachel
-  // younger female
-  'female_young': 'AZnzlk1XvdvUeBnXmlld', // Domi
-  // coach voice — warm, clear, encouraging
-  'coach':        '21m00Tcm4TlvDq8ikWAM', // Rachel
-};
-
-function getELVoiceId(caseData) {
-  if (!caseData) return EL_VOICES.coach;
+// OpenAI TTS voices — matched to patient age/gender
+// male: onyx (deep/older), echo (mid), fable (warm/younger)
+// female: shimmer (warm/older), nova (clear/mid), alloy (younger)
+// coach: shimmer — warm and encouraging
+function getOAIVoice(caseData, isCoach) {
+  if (isCoach || !caseData) return 'shimmer';
   const g = caseData.voiceGender;
   const age = caseData.age;
   if (g === 'male') {
-    if (age >= 65) return EL_VOICES.male_older;
-    if (age >= 45) return EL_VOICES.male_mid;
-    return EL_VOICES.male_young;
+    if (age >= 60) return 'onyx';
+    if (age >= 45) return 'echo';
+    return 'fable';
   } else {
-    if (age >= 65) return EL_VOICES.female_older;
-    if (age >= 45) return EL_VOICES.female_mid;
-    return EL_VOICES.female_young;
+    if (age >= 60) return 'shimmer';
+    if (age >= 45) return 'nova';
+    return 'alloy';
   }
 }
 
 let currentAudio = null;
 
-async function speakElevenLabs(text, voiceId, onDone, isCoach) {
+async function speakOpenAI(text, voice, onDone, isCoach) {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-  const vsettings = isCoach
-    ? { stability: 0.6, similarity_boost: 0.7, style: 0.2, use_speaker_boost: true }
-    : { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true };
   try {
     const res = await fetch('/api/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ voiceId, text, voiceSettings: vsettings })
+      body: JSON.stringify({ text, voice })
     });
     if (!res.ok) throw new Error('speak error ' + res.status);
     const blob = await res.blob();
@@ -319,13 +301,13 @@ async function speakElevenLabs(text, voiceId, onDone, isCoach) {
     };
     await audio.play();
   } catch(e) {
-    console.warn('ElevenLabs failed, using browser voice:', e.message);
+    console.warn('OpenAI TTS failed, using browser voice:', e.message);
     speakBrowser(text, currentCase, onDone, isCoach);
   }
 }
 
-async function speakElevenLabsCoach(text, onDone) {
-  return speakElevenLabs(text, EL_VOICES.coach, onDone, true);
+async function speakOpenAICoach(text, onDone) {
+  return speakOpenAI(text, 'shimmer', onDone, true);
 }
 
 const ALL_CASES = [
@@ -696,12 +678,12 @@ function speakBrowser(text, caseData, onDone, isCoach) {
   speakNext();
 }
 
-// Main speak — tries ElevenLabs via server, falls back to browser
+// Main speak — uses OpenAI TTS via server, falls back to browser
 function speak(text, onDone) {
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   synth.cancel();
   if (!text) { if (onDone) onDone(); return; }
-  speakElevenLabs(text, getELVoiceId(currentCase), onDone, false);
+  speakOpenAI(text, getOAIVoice(currentCase, false), onDone, false);
 }
 
 function replayLast() {
@@ -1032,7 +1014,7 @@ function speakSummary(text, onDone) {
   synth.cancel();
   if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   if (!text) { if (onDone) onDone(); return; }
-  speakElevenLabsCoach(text, onDone);
+  speakOpenAICoach(text, onDone);
 }
 
 function toggleSumMic() {
