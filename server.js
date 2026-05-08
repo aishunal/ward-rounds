@@ -6,8 +6,20 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── TEST ENDPOINT ──
+app.get('/api/test', (req, res) => {
+  res.json({
+    status: 'ok',
+    hasAnthropicKey: !!(process.env.ANTHROPIC_KEY || '').trim(),
+    hasOpenAIKey: !!(process.env.OPENAI_KEY || '').trim(),
+    anthropicPrefix: (process.env.ANTHROPIC_KEY || '').slice(0,12),
+    openaiPrefix: (process.env.OPENAI_KEY || '').slice(0,8),
+  });
+});
+
 // ── ANTHROPIC PROXY ──
 app.post('/api/chat', async (req, res) => {
+  console.log('[CHAT] incoming request, model:', req.body.model);
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
