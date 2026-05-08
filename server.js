@@ -30,9 +30,12 @@ app.post('/api/chat', async (req, res) => {
       },
       body: JSON.stringify(req.body)
     });
+    console.log('[CHAT] Anthropic status:', response.status);
     const data = await response.json();
+    if (data.error) console.log('[CHAT] Anthropic error:', JSON.stringify(data.error));
     res.json(data);
   } catch (err) {
+    console.log('[CHAT] Exception:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
